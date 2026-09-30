@@ -2,14 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Spin animation for loading spinner */
+html {
+  scroll-behavior: initial;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* Custom scrollbar for code card */
+/* Custom scrollbar */
 pre::-webkit-scrollbar {
   width: 8px;
   height: 8px;

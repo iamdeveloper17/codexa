@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import "../styles/globals.css";
+import { SmoothScroll } from "@/components/landing/SmoothScroll";
 
 export const metadata: Metadata = {
-  title: "AI Design to Code",
-  description: "AI powered design to code",
+  title: "Codexa — AI Design to Code",
+  description:
+    "Transform your ideas into production-ready React code with AI. Live preview, save projects, and ship faster.",
+  keywords: ["AI", "design to code", "React", "Next.js", "Tailwind", "code generator"],
+  authors: [{ name: "iamdeveloper17" }],
+  openGraph: {
+    title: "Codexa — AI Design to Code",
+    description: "Transform your ideas into production-ready React code with AI.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -13,7 +22,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SmoothScroll>{children}</SmoothScroll>
+      </body>
     </html>
   );
 }

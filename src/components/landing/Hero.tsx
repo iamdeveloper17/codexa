@@ -4,9 +4,12 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { CodePreview } from "./CodePreview";
 import { ProjectsSidebar } from "./ProjectsSidebar";
+import { createClient } from "@/lib/supabase/client";
 import {
   SavedProject,
   getProjects,
@@ -26,13 +29,37 @@ export function Hero() {
   const [saved, setSaved] = useState(false);
   const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
 
-  // Projects state
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [user, setUser] = useState<User | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
   useEffect(() => {
-    setProjects(getProjects());
-  }, []);
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (user) {
+      setProjects(getProjects());
+    }
+  }, [user]);
 
   useGSAP(
     () => {
@@ -109,7 +136,7 @@ export function Hero() {
 
       setIsComplete(true);
     } catch {
-      setCode("❌ Generation failed, try again later");
+      setCode("❌ Generation failed. Please try again.");
       setIsComplete(true);
     } finally {
       setIsLoading(false);
@@ -146,6 +173,12 @@ export function Hero() {
     setProjects(getProjects());
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
   const isError = code.startsWith("❌");
   const showCard = isComplete && code.length > 0;
 
@@ -161,41 +194,120 @@ export function Hero() {
 
       <section
         ref={container}
-        className="h-screen bg-black text-white flex flex-col items-center justify-center px-6 pt-16 pb-8 relative overflow-hidden"
+        className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6 pt-16 pb-8 relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20 pointer-events-none" />
 
-        {/* Projects Button */}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          style={{
-            position: "absolute",
-            top: "24px",
-            left: "24px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 16px",
-            background: "rgba(168, 85, 247, 0.1)",
-            border: "1px solid rgba(168, 85, 247, 0.3)",
-            borderRadius: "10px",
-            color: "#a78bfa",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: "pointer",
-            zIndex: 20,
-            fontFamily: "monospace",
-          }}
-        >
-          📁 Projects ({projects.length})
-        </button>
+        {/* TOP BAR */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 z-20">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-sm font-bold text-white">
+              C
+            </div>
+            <span className="text-white font-bold text-lg tracking-tight">
+              Codexa
+            </span>
+          </div>
 
+          {/* Right Side */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 14px",
+                background: "rgba(168, 85, 247, 0.1)",
+                border: "1px solid rgba(168, 85, 247, 0.3)",
+                borderRadius: "10px",
+                color: "#a78bfa",
+                fontSize: "13px",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "monospace",
+              }}
+            >
+              📁 Projects ({projects.length})
+            </button>
+
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white">
+                    {user.email?.[0].toUpperCase()}
+                  </div>
+                  <span className="text-sm text-gray-300 hidden sm:block max-w-[120px] truncate">
+                    {user.email}
+                  </span>
+                  <svg
+                    className="w-3 h-3 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {userMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-30"
+                      onClick={() => setUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-zinc-900 border border-white/10 shadow-xl overflow-hidden z-40">
+                      <div className="px-4 py-3 border-b border-white/10">
+                        <p className="text-xs text-gray-500 mb-1">
+                          Signed in as
+                        </p>
+                        <p className="text-sm text-white truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* HERO */}
         <h1 className="hero-title text-4xl md:text-5xl lg:text-6xl font-bold text-white text-center max-w-4xl leading-tight">
-          Design to Code, AI ke saath
+          Design to Code, Powered by AI
         </h1>
 
         <p className="hero-subtitle mt-4 text-base md:text-lg text-gray-400 text-center max-w-2xl">
-          Apne idea ko React code mein badlo, ek line mein
+          Turn your idea into production-ready React code in seconds
         </p>
 
         <div className="hero-cta mt-10 flex flex-col sm:flex-row gap-4 w-full max-w-xl">
@@ -204,7 +316,7 @@ export function Hero() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-            placeholder="Jaise: ek glassmorphism login form banao"
+            placeholder="Try: create a glassmorphism login form"
             className="flex-1 px-6 py-4 rounded-full bg-white/10 border border-white/20 focus:outline-none focus:border-purple-500 text-white placeholder-gray-500"
           />
           <button
@@ -215,11 +327,10 @@ export function Hero() {
               isLoading && "opacity-50 cursor-not-allowed"
             )}
           >
-            {isLoading ? "Generate ho raha hai..." : "Generate karo"}
+            {isLoading ? "Generating..." : "Generate"}
           </button>
         </div>
 
-        {/* Loading */}
         {isLoading && (
           <div
             className="floating-card"
@@ -249,12 +360,11 @@ export function Hero() {
               }}
             />
             <span style={{ color: "#9ca3af", fontSize: "14px" }}>
-              AI code generate kar raha hai...
+              AI is writing your code...
             </span>
           </div>
         )}
 
-        {/* Error */}
         {showCard && isError && (
           <div
             style={{
@@ -274,7 +384,6 @@ export function Hero() {
           </div>
         )}
 
-        {/* Card */}
         {showCard && !isError && (
           <div
             className="floating-card"
@@ -297,7 +406,6 @@ export function Hero() {
               overflow: "hidden",
             }}
           >
-            {/* Header */}
             <div
               style={{
                 display: "flex",
@@ -394,7 +502,6 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Body */}
             {viewMode === "preview" ? (
               <div
                 style={{

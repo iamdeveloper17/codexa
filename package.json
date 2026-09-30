@@ -12,6 +12,8 @@
     "@ai-sdk/openai": "^4.0.78",
     "@codesandbox/sandpack-react": "^2.20.0",
     "@gsap/react": "^2.1.2",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
     "ai": "^7.0.118",
     "clsx": "^2.1.1",
     "gsap": "^3.15.0",

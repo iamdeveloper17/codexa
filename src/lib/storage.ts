@@ -1,3 +1,5 @@
+import { createClient } from '@/lib/supabase/client'
+
 export interface SavedProject {
   id: string;
   prompt: string;
@@ -18,23 +20,19 @@ export function getProjects(): SavedProject[] {
   }
 }
 
-export function saveProject(prompt: string, code: string): SavedProject {
-  const project: SavedProject = {
-    id:
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : Date.now().toString(),
-    prompt,
-    code,
-    createdAt: Date.now(),
-  };
+export async function saveProject(prompt: string, code: string) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
 
-  const projects = getProjects();
-  projects.unshift(project);
-  const trimmed = projects.slice(0, 50);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+  const { data, error } = await supabase
+    .from('projects')
+    .insert({ prompt, code, user_id: user.id })
+    .select()
+    .single()
 
-  return project;
+  if (error) throw error
+  return data
 }
 
 export function deleteProject(id: string): void {
