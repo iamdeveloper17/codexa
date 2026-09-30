@@ -55,7 +55,7 @@ export function Hero() {
 
   useEffect(() => {
     if (user) {
-      setProjects(getProjects());
+      getProjects().then(setProjects);
     }
   }, [user]);
 
@@ -148,12 +148,14 @@ export function Hero() {
     } catch {}
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!code || code.startsWith("❌")) return;
-    saveProject(prompt, code);
-    setProjects(getProjects());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    const project = await saveProject(prompt, code);
+    if (project) {
+      setProjects((prev) => [project, ...prev]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   };
 
   const handleLoad = (project: SavedProject) => {
@@ -164,9 +166,9 @@ export function Hero() {
     setSidebarOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    deleteProject(id);
-    setProjects(getProjects());
+  const handleDelete = async (id: string) => {
+    await deleteProject(id);
+    setProjects((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handleLogout = async () => {
@@ -190,58 +192,44 @@ export function Hero() {
 
       <section
         ref={container}
-        className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6 pt-16 pb-8 relative overflow-hidden"
+        className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4 sm:px-6 pt-20 sm:pt-16 pb-8 relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20 pointer-events-none" />
 
         {/* TOP BAR */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 z-20">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 z-20 gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-sm font-bold text-white">
               C
             </div>
-            <span className="text-white font-bold text-lg tracking-tight">
+            <span className="text-white font-bold text-base sm:text-lg tracking-tight">
               Codexa
             </span>
           </div>
 
-          {/* Right Side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 14px",
-                background: "rgba(168, 85, 247, 0.1)",
-                border: "1px solid rgba(168, 85, 247, 0.3)",
-                borderRadius: "10px",
-                color: "#a78bfa",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                fontFamily: "monospace",
-              }}
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs sm:text-sm font-mono hover:bg-purple-500/20 transition-colors whitespace-nowrap"
             >
-              📁 Projects ({projects.length})
+              📁 <span className="hidden sm:inline">Projects</span>{" "}
+              <span>({projects.length})</span>
             </button>
 
             {user && (
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
                     {user.email?.[0].toUpperCase()}
                   </div>
-                  <span className="text-sm text-gray-300 hidden sm:block max-w-[120px] truncate">
+                  <span className="text-sm text-gray-300 hidden md:block max-w-[120px] truncate">
                     {user.email}
                   </span>
                   <svg
-                    className="w-3 h-3 text-gray-400"
+                    className="w-3 h-3 text-gray-400 hidden sm:block"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -298,28 +286,28 @@ export function Hero() {
         </div>
 
         {/* HERO CONTENT */}
-        <h1 className="hero-title text-4xl md:text-5xl lg:text-6xl font-bold text-white text-center max-w-4xl leading-tight">
+        <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white text-center max-w-4xl leading-tight px-2">
           Design to Code, Powered by AI
         </h1>
 
-        <p className="hero-subtitle mt-4 text-base md:text-lg text-gray-400 text-center max-w-2xl">
+        <p className="hero-subtitle mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-gray-400 text-center max-w-2xl px-2">
           Turn your idea into production-ready React code in seconds
         </p>
 
-        <div className="hero-cta mt-10 flex flex-col sm:flex-row gap-4 w-full max-w-xl">
+        <div className="hero-cta mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-xl">
           <input
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
             placeholder="Try: create a glassmorphism login form"
-            className="flex-1 px-6 py-4 rounded-full bg-white/10 border border-white/20 focus:outline-none focus:border-purple-500 text-white placeholder-gray-500"
+            className="flex-1 px-5 sm:px-6 py-3 sm:py-4 rounded-full bg-white/10 border border-white/20 focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 text-sm sm:text-base"
           />
           <button
             onClick={handleGenerate}
             disabled={isLoading}
             className={cn(
-              "px-8 py-4 rounded-full bg-purple-600 hover:bg-purple-500 font-semibold transition-colors",
+              "px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-purple-600 hover:bg-purple-500 font-semibold transition-colors text-sm sm:text-base whitespace-nowrap",
               isLoading && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -329,23 +317,7 @@ export function Hero() {
 
         {/* Loading */}
         {isLoading && (
-          <div
-            className="floating-card"
-            style={{
-              marginTop: "30px",
-              width: "100%",
-              maxWidth: "672px",
-              background: "rgba(17, 24, 39, 0.8)",
-              backdropFilter: "blur(8px)",
-              borderRadius: "16px",
-              padding: "24px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              zIndex: 10,
-            }}
-          >
+          <div className="floating-card mt-6 sm:mt-8 w-full max-w-2xl rounded-2xl p-4 sm:p-6 bg-gray-900/80 backdrop-blur border border-white/10 flex items-center gap-3 z-10">
             <div
               style={{
                 width: "16px",
@@ -354,9 +326,10 @@ export function Hero() {
                 borderTopColor: "#a78bfa",
                 borderRadius: "50%",
                 animation: "spin 0.8s linear infinite",
+                flexShrink: 0,
               }}
             />
-            <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+            <span className="text-gray-400 text-sm">
               AI is writing your code...
             </span>
           </div>
@@ -364,123 +337,41 @@ export function Hero() {
 
         {/* Error */}
         {showCard && isError && (
-          <div
-            style={{
-              marginTop: "30px",
-              padding: "16px 24px",
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
-              borderRadius: "12px",
-              color: "#fca5a5",
-              fontSize: "14px",
-              maxWidth: "672px",
-              width: "100%",
-              zIndex: 10,
-            }}
-          >
+          <div className="mt-6 sm:mt-8 p-4 sm:p-6 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm max-w-2xl w-full z-10">
             {code}
           </div>
         )}
 
         {/* Code Card */}
         {showCard && !isError && (
-          <div
-            className="floating-card"
-            style={{
-              marginTop: "30px",
-              marginBottom: "30px",
-              width: "100%",
-              maxWidth: "672px",
-              background: "rgba(17, 24, 39, 0.8)",
-              backdropFilter: "blur(8px)",
-              borderRadius: "16px",
-              padding: "24px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              position: "relative",
-              zIndex: 10,
-              height: "60vh",
-              maxHeight: "600px",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            {/* Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "12px",
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  fontFamily: "monospace",
-                }}
-              >
+          <div className="floating-card mt-6 sm:mt-8 mb-6 sm:mb-8 w-full max-w-2xl rounded-2xl p-4 sm:p-6 bg-gray-900/80 backdrop-blur border border-white/10 relative z-10 h-[50vh] sm:h-[60vh] max-h-[500px] sm:max-h-[600px] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-3 flex-shrink-0 gap-2">
+              <span className="text-xs text-gray-500 font-mono truncate">
                 Generated Code
               </span>
 
-              <div style={{ display: "flex", gap: "6px" }}>
+              <div className="flex gap-2 flex-shrink-0">
                 <button
                   onClick={handleSave}
-                  style={{
-                    fontSize: "12px",
-                    color: saved ? "#4ade80" : "#a78bfa",
-                    fontFamily: "monospace",
-                    background: saved
-                      ? "rgba(74, 222, 128, 0.1)"
-                      : "rgba(168, 85, 247, 0.1)",
-                    border:
-                      "1px solid " +
-                      (saved
-                        ? "rgba(74, 222, 128, 0.3)"
-                        : "rgba(168, 85, 247, 0.3)"),
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                  }}
+                  className={cn(
+                    "text-xs font-mono px-3 py-1.5 rounded-md border transition-colors",
+                    saved
+                      ? "text-green-400 bg-green-500/10 border-green-500/30"
+                      : "text-purple-400 bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20"
+                  )}
                 >
                   {saved ? "✓ Saved" : "Save"}
                 </button>
                 <button
                   onClick={handleCopy}
-                  style={{
-                    fontSize: "12px",
-                    color: "#a78bfa",
-                    fontFamily: "monospace",
-                    background: "rgba(168, 85, 247, 0.1)",
-                    border: "1px solid rgba(168, 85, 247, 0.3)",
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                  }}
+                  className="text-xs font-mono px-3 py-1.5 rounded-md text-purple-400 bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition-colors"
                 >
                   {copied ? "✓ Copied" : "Copy"}
                 </button>
               </div>
             </div>
 
-            {/* Code Body */}
-            <pre
-              style={{
-                fontSize: "14px",
-                color: "#4ade80",
-                overflowY: "auto",
-                overflowX: "hidden",
-                flex: 1,
-                minHeight: 0,
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                margin: 0,
-                paddingRight: "8px",
-              }}
-            >
+            <pre className="text-xs sm:text-sm text-green-400 overflow-y-auto overflow-x-hidden flex-1 min-h-0 font-mono whitespace-pre-wrap break-words m-0 pr-2">
               <code>{code}</code>
             </pre>
           </div>

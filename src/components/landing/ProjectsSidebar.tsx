@@ -3,171 +3,92 @@
 import { SavedProject } from "@/lib/storage";
 
 interface ProjectsSidebarProps {
-    projects: SavedProject[];
-    onLoad: (project: SavedProject) => void;
-    onDelete: (id: string) => void;
-    isOpen: boolean;
-    onClose: () => void;
+  projects: SavedProject[];
+  onLoad: (project: SavedProject) => void;
+  onDelete: (id: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function ProjectsSidebar({
-    projects,
-    onLoad,
-    onDelete,
-    isOpen,
-    onClose,
+  projects,
+  onLoad,
+  onDelete,
+  isOpen,
+  onClose,
 }: ProjectsSidebarProps) {
-    return (
-        <>
-            {/* Backdrop */}
-            {isOpen && (
-                <div
-                    onClick={onClose}
-                    style={{
-                        position: "fixed",
-                        inset: 0,
-                        background: "rgba(0, 0, 0, 0.5)",
-                        zIndex: 40,
-                    }}
-                />
-            )}
+  return (
+    <>
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 z-40"
+          aria-hidden="true"
+        />
+      )}
 
-            {/* Sidebar */}
-            <div
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    left: isOpen ? 0 : "-340px",
-                    width: "340px",
-                    height: "100vh",
-                    background: "rgba(17, 24, 39, 0.98)",
-                    backdropFilter: "blur(12px)",
-                    borderRight: "1px solid rgba(255, 255, 255, 0.1)",
-                    zIndex: 50,
-                    transition: "left 0.3s ease",
-                    padding: "24px",
-                    overflowY: "auto",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "24px",
-                    }}
+      <div
+        className={`fixed top-0 left-0 h-screen w-[85vw] max-w-[340px] bg-zinc-950/98 backdrop-blur-xl border-r border-white/10 z-50 transition-transform duration-300 overflow-y-auto p-5 sm:p-6 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-white text-lg font-bold">📁 Saved Projects</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-300 text-3xl leading-none cursor-pointer p-0 w-8 h-8 flex items-center justify-center"
+            aria-label="Close sidebar"
+          >
+            ×
+          </button>
+        </div>
+
+        {projects.length === 0 ? (
+          <div className="text-gray-500 text-sm text-center py-10 leading-relaxed">
+            No saved projects yet.
+            <br />
+            <br />
+            Generate code and click{" "}
+            <span className="text-purple-400 font-semibold">Save</span> to keep
+            it here!
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                className="p-3 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
+              >
+                <button
+                  onClick={() => onLoad(project)}
+                  className="text-left w-full text-gray-200 text-sm font-medium mb-2 truncate hover:text-purple-300 transition-colors"
+                  title={project.prompt}
                 >
-                    <h2
-                        style={{
-                            color: "#ffffff",
-                            fontSize: "18px",
-                            fontWeight: 700,
-                            margin: 0,
-                        }}
-                    >
-                        📁 Saved Projects
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "#6b7280",
-                            fontSize: "28px",
-                            cursor: "pointer",
-                            lineHeight: 1,
-                            padding: 0,
-                        }}
-                    >
-                        ×
-                    </button>
+                  {project.prompt}
+                </button>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 text-xs">
+                    {new Date(project.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(project.id);
+                    }}
+                    className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-1 rounded hover:bg-red-500/20 transition-colors"
+                  >
+                    Delete
+                  </button>
                 </div>
-
-                {projects.length === 0 ? (
-                    <div
-                        style={{
-                            color: "#6b7280",
-                            fontSize: "14px",
-                            textAlign: "center",
-                            padding: "40px 20px",
-                            lineHeight: 1.6,
-                        }}
-                    >
-                        No saved projects yet.
-                        <br />
-                        <br />
-                        Generate code and click{" "}
-                        <span style={{ color: "#a78bfa", fontWeight: 600 }}>Save</span>{" "}
-                        to keep it here!
-                    </div>
-                ) : (
-                    <div
-                        style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-                    >
-                        {projects.map((project) => (
-                            <div
-                                key={project.id}
-                                style={{
-                                    padding: "12px 14px",
-                                    background: "rgba(255, 255, 255, 0.05)",
-                                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                                    borderRadius: "10px",
-                                    transition: "all 0.2s",
-                                }}
-                            >
-                                <div
-                                    onClick={() => onLoad(project)}
-                                    style={{
-                                        color: "#e5e7eb",
-                                        fontSize: "13px",
-                                        fontWeight: 500,
-                                        marginBottom: "8px",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        cursor: "pointer",
-                                    }}
-                                    title={project.prompt}
-                                >
-                                    {project.prompt}
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <span style={{ color: "#6b7280", fontSize: "11px" }}>
-                                        {new Date(project.createdAt).toLocaleDateString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            year: "numeric",
-                                        })}
-                                    </span>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onDelete(project.id);
-                                        }}
-                                        style={{
-                                            background: "rgba(239, 68, 68, 0.1)",
-                                            border: "1px solid rgba(239, 68, 68, 0.3)",
-                                            color: "#fca5a5",
-                                            fontSize: "11px",
-                                            cursor: "pointer",
-                                            padding: "3px 8px",
-                                            borderRadius: "5px",
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </>
-    );
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
 }

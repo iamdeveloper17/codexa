@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from "@/lib/supabase/client";
 
 export interface SavedProject {
   id: string;
@@ -7,39 +7,86 @@ export interface SavedProject {
   createdAt: number;
 }
 
-const STORAGE_KEY = "codexa_projects";
+let cachedProjects: SavedProject[] = [];
 
-export function getProjects(): SavedProject[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as SavedProject[];
-  } catch {
-    return [];
-  }
-}
+export async function getProjects(): Promise<SavedProject[]> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export async function saveProject(prompt: string, code: string) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) return [];
 
   const { data, error } = await supabase
-    .from('projects')
-    .insert({ prompt, code, user_id: user.id })
+    .from("projects")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("Failed to load projects:", error);
+    return [];
+  }
+
+  cachedProjects = (data || []).map((p) => ({
+    id: p.id,
+    prompt: p.prompt,
+    code: p.code,
+    createdAt: new Date(p.created_at).getTime(),
+  }));
+
+  return cachedProjects;
+}
+
+export async function saveProject(
+  prompt: string,
+  code: string
+): Promise<SavedProject | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Not authenticated");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({
+      user_id: user.id,
+      prompt,
+      code,
+    })
     .select()
-    .single()
+    .single();
 
-  if (error) throw error
-  return data
+  if (error) {
+    console.error("Failed to save project:", error);
+    return null;
+  }
+
+  const project: SavedProject = {
+    id: data.id,
+    prompt: data.prompt,
+    code: data.code,
+    createdAt: new Date(data.created_at).getTime(),
+  };
+
+  cachedProjects = [project, ...cachedProjects];
+  return project;
 }
 
-export function deleteProject(id: string): void {
-  const projects = getProjects().filter((p) => p.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-}
+export async function deleteProject(id: string): Promise<void> {
+  const supabase = createClient();
 
-export function clearAllProjects(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+
+  if (error) {
+    console.error("Failed to delete project:", error);
+    return;
+  }
+
+  cachedProjects = cachedProjects.filter((p) => p.id !== id);
 }
