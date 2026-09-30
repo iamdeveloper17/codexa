@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Spin animation for loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Custom scrollbar for code card */
 pre::-webkit-scrollbar {
   width: 8px;

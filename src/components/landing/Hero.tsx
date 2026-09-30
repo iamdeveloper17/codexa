@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { CodePreview } from "./CodePreview";
 
 gsap.registerPlugin(SplitText, useGSAP);
 
@@ -13,7 +14,9 @@ export function Hero() {
   const [prompt, setPrompt] = useState("");
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
 
   useGSAP(
     () => {
@@ -44,13 +47,13 @@ export function Hero() {
     { scope: container }
   );
 
-  // Code aane ke baad floating card animate karo + auto scroll
+  // Code aane ke baad card animate karo
   useEffect(() => {
-    if (!code) return;
+    if (!isComplete) return;
 
     const timer = setTimeout(() => {
       const card = document.querySelector(".floating-card");
-      if (card && card.children.length > 0) {
+      if (card) {
         gsap.from(card, {
           y: 40,
           opacity: 0,
@@ -58,15 +61,17 @@ export function Hero() {
           ease: "power3.out",
         });
       }
-    }, 150);
+    }, 100);
 
     return () => clearTimeout(timer);
-  }, [code]);
+  }, [isComplete]);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isLoading) return;
     setIsLoading(true);
     setCode("");
+    setIsComplete(false);
+    setViewMode("preview");
 
     try {
       const response = await fetch("/api/generate", {
@@ -85,8 +90,11 @@ export function Hero() {
         if (done) break;
         setCode((prev) => prev + decoder.decode(value));
       }
+
+      setIsComplete(true);
     } catch {
       setCode("❌ Generation failed, try again later");
+      setIsComplete(true);
     } finally {
       setIsLoading(false);
     }
@@ -101,6 +109,9 @@ export function Hero() {
       // ignore
     }
   };
+
+  const isError = code.startsWith("❌");
+  const showCard = isComplete && code.length > 0;
 
   return (
     <section
@@ -138,7 +149,63 @@ export function Hero() {
         </button>
       </div>
 
-      {code.length > 0 && (
+      {/* Loading Spinner */}
+      {isLoading && (
+        <div
+          className="floating-card"
+          style={{
+            marginTop: "30px",
+            width: "100%",
+            maxWidth: "672px",
+            background: "rgba(17, 24, 39, 0.8)",
+            backdropFilter: "blur(8px)",
+            borderRadius: "16px",
+            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              border: "2px solid rgba(168, 85, 247, 0.3)",
+              borderTopColor: "#a78bfa",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+            AI code generate kar raha hai...
+          </span>
+        </div>
+      )}
+
+      {/* Error Box */}
+      {showCard && isError && (
+        <div
+          style={{
+            marginTop: "30px",
+            padding: "16px 24px",
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "12px",
+            color: "#fca5a5",
+            fontSize: "14px",
+            maxWidth: "672px",
+            width: "100%",
+            zIndex: 10,
+          }}
+        >
+          {code}
+        </div>
+      )}
+
+      {/* Code/Preview Card */}
+      {showCard && !isError && (
         <div
           className="floating-card"
           style={{
@@ -160,6 +227,7 @@ export function Hero() {
             overflow: "hidden",
           }}
         >
+          {/* Header: Toggle + Copy */}
           <div
             style={{
               display: "flex",
@@ -169,15 +237,54 @@ export function Hero() {
               flexShrink: 0,
             }}
           >
-            <span
-              style={{
-                fontSize: "12px",
-                color: "#6b7280",
-                fontFamily: "monospace",
-              }}
-            >
-              Generated Code
-            </span>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button
+                onClick={() => setViewMode("preview")}
+                style={{
+                  fontSize: "12px",
+                  color: viewMode === "preview" ? "#a78bfa" : "#6b7280",
+                  background:
+                    viewMode === "preview"
+                      ? "rgba(168, 85, 247, 0.15)"
+                      : "transparent",
+                  border:
+                    "1px solid " +
+                    (viewMode === "preview"
+                      ? "rgba(168, 85, 247, 0.4)"
+                      : "transparent"),
+                  padding: "4px 12px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                  transition: "all 0.2s",
+                }}
+              >
+                Preview
+              </button>
+              <button
+                onClick={() => setViewMode("code")}
+                style={{
+                  fontSize: "12px",
+                  color: viewMode === "code" ? "#a78bfa" : "#6b7280",
+                  background:
+                    viewMode === "code"
+                      ? "rgba(168, 85, 247, 0.15)"
+                      : "transparent",
+                  border:
+                    "1px solid " +
+                    (viewMode === "code"
+                      ? "rgba(168, 85, 247, 0.4)"
+                      : "transparent"),
+                  padding: "4px 12px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                  transition: "all 0.2s",
+                }}
+              >
+                Code
+              </button>
+            </div>
             <button
               onClick={handleCopy}
               style={{
@@ -194,23 +301,38 @@ export function Hero() {
               {copied ? "✓ Copied" : "Copy"}
             </button>
           </div>
-          <pre
-            style={{
-              fontSize: "14px",
-              color: "#4ade80",
-              overflowY: "auto",
-              overflowX: "hidden",
-              flex: 1,
-              minHeight: 0,
-              fontFamily: "monospace",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              margin: 0,
-              paddingRight: "8px",
-            }}
-          >
-            <code>{code}</code>
-          </pre>
+
+          {/* Body: Preview ya Code */}
+          {viewMode === "preview" ? (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                borderRadius: "12px",
+                overflow: "hidden",
+              }}
+            >
+              <CodePreview code={code} />
+            </div>
+          ) : (
+            <pre
+              style={{
+                fontSize: "14px",
+                color: "#4ade80",
+                overflowY: "auto",
+                overflowX: "hidden",
+                flex: 1,
+                minHeight: 0,
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                margin: 0,
+                paddingRight: "8px",
+              }}
+            >
+              <code>{code}</code>
+            </pre>
+          )}
         </div>
       )}
     </section>

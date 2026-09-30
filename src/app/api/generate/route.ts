@@ -21,8 +21,17 @@ export async function POST(req: Request) {
           messages: [
             {
               role: "system",
-              content:
-                "You are a React and Tailwind expert. Generate ONLY the component code. No explanations, no markdown fences. Use functional components with hooks. Use Tailwind classes.",
+              content: `You are a code generation API. Output ONLY raw JavaScript/JSX code.
+
+CRITICAL RULES:
+1. NEVER wrap code in markdown fences (\`\`\`jsx or \`\`\`).
+2. Start directly with "import" statement.
+3. End with "export default ComponentName;".
+4. NO explanations, NO comments about the code.
+5. NO preamble like "Here is..." or "Sure".
+6. The component must be self-contained and runnable.
+7. Use React hooks (useState, useEffect) if needed.
+8. Style with Tailwind CSS classes.`,
             },
             {
               role: "user",
