@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
-import { CodePreview } from "./CodePreview";
 import { ProjectsSidebar } from "./ProjectsSidebar";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -27,7 +26,6 @@ export function Hero() {
   const [isComplete, setIsComplete] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
 
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -114,7 +112,6 @@ export function Hero() {
     setCode("");
     setIsComplete(false);
     setSaved(false);
-    setViewMode("preview");
 
     try {
       const response = await fetch("/api/generate", {
@@ -164,7 +161,6 @@ export function Hero() {
     setCode(project.code);
     setIsComplete(true);
     setSaved(false);
-    setViewMode("preview");
     setSidebarOpen(false);
   };
 
@@ -301,7 +297,7 @@ export function Hero() {
           </div>
         </div>
 
-        {/* HERO */}
+        {/* HERO CONTENT */}
         <h1 className="hero-title text-4xl md:text-5xl lg:text-6xl font-bold text-white text-center max-w-4xl leading-tight">
           Design to Code, Powered by AI
         </h1>
@@ -331,6 +327,7 @@ export function Hero() {
           </button>
         </div>
 
+        {/* Loading */}
         {isLoading && (
           <div
             className="floating-card"
@@ -365,6 +362,7 @@ export function Hero() {
           </div>
         )}
 
+        {/* Error */}
         {showCard && isError && (
           <div
             style={{
@@ -384,6 +382,7 @@ export function Hero() {
           </div>
         )}
 
+        {/* Code Card */}
         {showCard && !isError && (
           <div
             className="floating-card"
@@ -406,6 +405,7 @@ export function Hero() {
               overflow: "hidden",
             }}
           >
+            {/* Header */}
             <div
               style={{
                 display: "flex",
@@ -415,52 +415,15 @@ export function Hero() {
                 flexShrink: 0,
               }}
             >
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button
-                  onClick={() => setViewMode("preview")}
-                  style={{
-                    fontSize: "12px",
-                    color: viewMode === "preview" ? "#a78bfa" : "#6b7280",
-                    background:
-                      viewMode === "preview"
-                        ? "rgba(168, 85, 247, 0.15)"
-                        : "transparent",
-                    border:
-                      "1px solid " +
-                      (viewMode === "preview"
-                        ? "rgba(168, 85, 247, 0.4)"
-                        : "transparent"),
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}
-                >
-                  Preview
-                </button>
-                <button
-                  onClick={() => setViewMode("code")}
-                  style={{
-                    fontSize: "12px",
-                    color: viewMode === "code" ? "#a78bfa" : "#6b7280",
-                    background:
-                      viewMode === "code"
-                        ? "rgba(168, 85, 247, 0.15)"
-                        : "transparent",
-                    border:
-                      "1px solid " +
-                      (viewMode === "code"
-                        ? "rgba(168, 85, 247, 0.4)"
-                        : "transparent"),
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}
-                >
-                  Code
-                </button>
-              </div>
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  fontFamily: "monospace",
+                }}
+              >
+                Generated Code
+              </span>
 
               <div style={{ display: "flex", gap: "6px" }}>
                 <button
@@ -502,36 +465,24 @@ export function Hero() {
               </div>
             </div>
 
-            {viewMode === "preview" ? (
-              <div
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                }}
-              >
-                <CodePreview code={code} />
-              </div>
-            ) : (
-              <pre
-                style={{
-                  fontSize: "14px",
-                  color: "#4ade80",
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  flex: 1,
-                  minHeight: 0,
-                  fontFamily: "monospace",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  margin: 0,
-                  paddingRight: "8px",
-                }}
-              >
-                <code>{code}</code>
-              </pre>
-            )}
+            {/* Code Body */}
+            <pre
+              style={{
+                fontSize: "14px",
+                color: "#4ade80",
+                overflowY: "auto",
+                overflowX: "hidden",
+                flex: 1,
+                minHeight: 0,
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                margin: 0,
+                paddingRight: "8px",
+              }}
+            >
+              <code>{code}</code>
+            </pre>
           </div>
         )}
       </section>
